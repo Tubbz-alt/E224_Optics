@@ -17,13 +17,17 @@ y=r0^2-y;
 y(y<0)=0;
 
 %Faisceau gaussien
+% fen=5E-3;
+% g1=meshgrid(linspace(-fen,fen,1000));
+% g2=meshgrid(linspace(fen,-fen,1000))';
+% G=g1.^2+g2.^2;
 R=eta.^2+xi.^2;
-sigma = 1E-2/16;
+sigma = 4E-2/32;
 
 %Plasma (crossed by probe at y=0) length
 Lp = 2*r0/sin(alpha);
 
-transmission = exp(-R/(2*sigma^2)).*ones(a)*(exp(-2*1i*pi/lambda*nLi*Lp));
+transmission = exp(-R/(2*sigma^2)).*ones(a)*(exp(-2*1i*pi/lambda*nLi*Lp)); 
 transmission = transmission .* exp(2*sqrt(y).*(-2*1i*pi/lambda*1/abs(sin(alpha))*(nPlasma-nLi)));
 transmission = transmission .* exp(1i*pi/(lambda*z)*R);
 

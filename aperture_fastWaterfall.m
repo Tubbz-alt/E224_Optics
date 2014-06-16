@@ -10,10 +10,10 @@ L_y=L/2;
 y=(linspace(L_y,-L_y,a))';
 
 %Gaussian beam
-sigma = 1E-2/4;
+sigma = 4E-2/16;
 transmission = exp(-(y.^2)/(2*sigma^2));
-%plot(transmission);
 
+%plot (transmission);
 
 % Transmission function calculation
 
@@ -22,7 +22,7 @@ if (hollow == 1) %hollow plasma
     for k=1:a
         
         ys=y.^2;
-        d0=r0^ys(k);
+        d0=r0^2-ys(k);
         d1=ys(k)-(r0-r1)^2;
         
         if (d0<0)
@@ -37,17 +37,17 @@ if (hollow == 1) %hollow plasma
     
 else %cylindrical plasma
     
-    Lp = 2*r0/sin(alpha);
+    Lp = 2*r0/(alpha);
     d0=r0^2-y.^2;
     
     transmission = transmission * (exp(-2*1i*pi/lambda*nLi*Lp));
-    transmission(d0>=0) = transmission(d0>=0) .* exp(-2*1i*pi/lambda*2/abs(sin(alpha))*(nPlasma-nLi).*sqrt(d0(d0>=0)));
-
+    transmission(d0>0) = transmission(d0>=0) .* exp(-2*1i*pi/lambda*2/abs(sin(alpha))*(nPlasma-nLi).*sqrt(d0(d0>=0)));
+    
 end
 
 %Fresnel term
 
-transmission = transmission .* exp(1i*pi/(lambda*z)*R);
-
-
+transmission = transmission .* exp(1i*pi/(lambda*z)*y.^2);
+% plot(atan(imag(transmission)./real(transmission)));
+% grid;
 end
