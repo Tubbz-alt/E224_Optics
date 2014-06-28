@@ -40,6 +40,5 @@ end
 %Fresnel term
 
 transmission = transmission .* exp(1i*pi/(lambda*z)*y.^2);
- %plot(atan(imag(transmission)./real(transmission)));
-% grid;
+
 end
