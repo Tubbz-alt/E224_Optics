@@ -12,6 +12,7 @@ y=(linspace(L_y,-L_y,a))';
 %Gaussian beam
 sigma = 4E-2/16;
 transmission = exp(-(y.^2)/(2*sigma^2));
+plot(y,4E6*transmission,'r');
 
 %plot (transmission);
 
@@ -40,5 +41,5 @@ end
 %Fresnel term
 
 transmission = transmission .* exp(1i*pi/(lambda*z)*y.^2);
-
+figure; plot(y,4E6*abs(transmission),'m');
 end

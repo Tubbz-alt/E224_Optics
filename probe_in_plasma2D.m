@@ -4,7 +4,7 @@
 hollow = 0; % Choose 1 for a simulation with hollow plasma
             % 0 for a cylindrical plasma
 
-waterfall = 0; % Choose 1 to run a waterfall (superpostition of different propagations)
+waterfall = 1; % Choose 1 to run a waterfall (superpostition of different propagations)
                % 0 just to make a test for one z
                
 plotting = 0; % Choose 1 to plot the intensity for each z during waterfall
@@ -13,8 +13,8 @@ plotting = 0; % Choose 1 to plot the intensity for each z during waterfall
     %Properties
 
 %Density
-Np = 1E17 ; %Plasma
-NLi = 3E16; %Lithium
+Np = 1E16 ; %Plasma
+NLi = 1E16; %Lithium
 
 %Wavelength
 lambda = 800E-9;
@@ -23,28 +23,28 @@ lambda_Li = 670E-9;
 
 %Refractive index
 nPlasma = sqrt(1 - lambda^2/lambda_plasma^2); %nPlasma=0.999967999488;
-re=1E-7;
+re=2E-7;
 nLi = 1 + (NLi*re/(2*pi))*0.744/(1/lambda_Li^2 - 1/lambda^2); %nLi=1.0004;
 
 %Angle between plasma (z axis) and probe direction
-alpha = pi/10;
+alpha = pi/2;
 
 %Plasma size
     % Channel radius (plasma radius if cylindrical plasma)
-r0=50E-6; % !! increase a or reduce calib if you decrease r0 !!
+r0=200E-6; % !! increase a or reduce calib if you decrease r0 !!
     % For hollow plasma (ring width)
 r1=5E-6; % !! increase a or reduce calib if you decrease r1 !!
 
 %Accuracy 
-a = 10000; % step
-calib = 1E-1; % to calibrate delta_xi and delta_eta = L/a = z*calib/a
+a = 3000; % step
+calib = 3E-1; % to calibrate delta_xi and delta_eta = L/a = z*calib/a
 
 
 % Test for one z
 if (waterfall==0)
-    z = 0.01;
-    L=1E-2;
-    %L = z * calib;
+    z = 0.3;
+    %L=1E-2;
+    L = z * calib;
     L_x=2*pi*lambda*a*z/L; %axes of the camera plane
     if hollow==1
         A=hollowPlasma_aperture(nLi,nPlasma,lambda,r0,r1,z,L,alpha,a);
@@ -112,6 +112,7 @@ if (waterfall==1)
             
             if (plotting == 1)
                 figure;
+                L_x=abs(z)*calib;
                 imagesc([-L_x L_x],[-L_x L_x],U); axis xy;
                 % caxis([2 1E8]);
                 colormap hot;

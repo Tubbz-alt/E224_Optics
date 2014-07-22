@@ -23,7 +23,7 @@ re=2E-7;
 nLi = 1 + (NLi*re/(2*pi))*0.744/(1/lambda_Li^2 - 1/lambda^2); %nLi=1.0004;
 
 %Angle between plasma (z axis) and probe direction
-alpha = pi/300;
+alpha = pi/100;
 
 %Plasma size
     % Channel radius (plasma radius if cylindrical plasma)
@@ -43,10 +43,10 @@ calib = 5E-1; % to calibrate the size of the window before propagation
 
 %Propagation from -zmax meters to +zmax meters, with nbz iterations, with a step of 2*zmax/nbz
 zmax = 1;
-nbz = 500;
+nbz = 200;
 step = 2*zmax/nbz;
-z_min = 0.05;
-L = 0.05*calib;
+z_min = 0.01;
+L = 0.08*calib;
 W_linear = ones(b,nbz+1); %waterfall matrix with linear interpolation
 %W_spline = ones(1000,nbz+1); %waterfall matrix with spline interpolation
 
@@ -61,13 +61,13 @@ for k=0:nbz
         
         U=fft(A);
         U=fftshift(U);
-        U=sqrt(1/(z*lambda*1i*a))*U;
+        U=sqrt(L/(z*lambda*1i*a))*U;
         U=abs(U).^2;
         
         % Interpolation
         L_y=2*pi*lambda*a*z/L; %new window after fft
         window=(linspace(L_y/2,-L_y/2,a))';
-        grid=(linspace(0.08,-0.08,b))'; %the new grid within we do the interpolation
+        grid=(linspace(0.04,-0.04,b))'; %the new grid within we do the interpolation
         U_linear = interp1(window,U,grid,'linear');
         %U_spline = interp1(window,U,grid,'spline');
         
@@ -86,15 +86,15 @@ figure;
 
 pcolor(Xaxis,grid,W_linear);
 shading interp;
-colormap jet; 
-colorbar; caxis([0.01E8 2.5E8]);
+colormap hot; 
+colorbar; caxis([1E6 7E6]);
 if (hollow==1) 
     title ({'Hollow Plasma' 'linear interpolation'},'FontSize', 12);
 else
     title ({'Cylindrical Plasma' 'linear interpolation'},'FontSize', 12);
 end
 
-xlabel ('propagation in plasma z (m )', 'FontSize', 12);
+xlabel ('propagation in plasma z ( m )', 'FontSize', 12);
 ylabel ('Y ( m )', 'FontSize', 12);
 
 leg1 = {'alpha = ' num2str(alpha,'%0.2f')};

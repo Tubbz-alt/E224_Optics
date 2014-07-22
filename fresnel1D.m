@@ -1,7 +1,4 @@
-function U = fresnel1D(lambda, transmission, propag, L_window, nbpoints)
-
-%Grid definition
-grid = (linspace(L_window/2,-L_window/2,nbpoints))';
+function [U,new_grid] = fresnel1D(lambda, transmission, propag, grid)
 
 %Fresnel term
 U = transmission .* exp(1i*pi/(lambda*propag)*grid.^2);
@@ -10,11 +7,11 @@ U = transmission .* exp(1i*pi/(lambda*propag)*grid.^2);
 U=fft(U);
 U=fftshift(U);
 
-%Outside-FFT term
-new_length = 2*pi*lambda*nbpoints/L_window * propag;
-new_grid = (linspace(new_length/2,-new_length/2,nbpoints))'; %Grid after FFT
+%New grid
+new_grid = linspace(-lambda*propag/(grid(2)-grid(1))/2,lambda*propag/(grid(2)-grid(1))/2,size(U,1))';
 
-U=sqrt(L_window/(propag*lambda*1i*nbpoints))*U;
-U = U .* exp(2*1i*pi/lambda*(propag+(new_grid.^2)/(2*propag)));
+%Outside-FFT term
+U=(grid(2)-grid(1))/sqrt(propag*lambda*1i)*U;
+U = U .* exp(2*1i*pi/lambda*(propag+(new_grid.^2)/(2*propag))) .*exp(-1i*2*pi/(lambda*propag)*grid(1)*new_grid);
 
 end

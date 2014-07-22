@@ -5,7 +5,7 @@
 hollow = 0; % Choose 1 for a simulation with hollow plasma
             % 0 for a cylindrical plasma
 
-            
+
 %% Properties
 
 %Density
@@ -23,116 +23,109 @@ re=2E-7;
 nLi = 1 + (NLi*re/(2*pi))*0.744/(1/lambda_Li^2 - 1/lambda^2); %nLi=1.0004;
 
 %Angle between plasma (z axis) and probe direction
-alpha = pi/300;
+alpha = pi/100;
 
 %Plasma size
 % Channel radius (plasma radius if cylindrical plasma)
-r0=100E-6; % !! increase a or reduce calib if you decrease r0 !!
+r0=100E-6;
 % For hollow plasma (ring width)
-r1=25E-6; % !! increase a or reduce calib if you decrease r1 !!
+r1=25E-6;
 
-%Accuracy 
-a = 100000; %number of points in the first window
+%Accuracy
+a = 100001; %number of points in the first window
 b = 1000; %number of points in the interpolation grid
 calib = 5E-1; % to calibrate the size of the window before propagation
 
 %Lens properties
 f=1; %focus
-p=1E-1; %radius
+p=1.5E-2; %radius
 
 
 %% FFT Calculation for different z locations
 
+sigma = 1E-2/4; % RMS du faisceau gaussien
+
 %Propagation in plasma from -zmax meters to +zmax meters, with nbz iterations, with a step of 2*zmax/nbz
 zmax = 1;
-nbz = 500;
+nbz = 501;
 step = 2*zmax/nbz;
-z_min = 0.05;
-
-L_bp = 0.05*calib; %before plasma
-eta = (linspace(L_bp,-L_bp,a))'; %first grid
+L_bp = 0.08*calib; %before plasma
+eta = (linspace(-L_bp/2,L_bp/2,a))'; %first grid
 
 W_linear = ones(b,nbz+1); %waterfall matrix with linear interpolation
-%W_spline = ones(1000,nbz+1); %waterfall matrix with spline interpolation
 
 for k=0:nbz
     
-    %Propagation in plasma
     z=-zmax+step*k
     
-    if (z<-z_min || z>z_min)
-                 
+    %% Diffraction in the plasma, propagation to the lens
+    
+    %Gaussian beam
+    transmission = exp(-(eta.^2)/(2*(sqrt(2)*sigma)^2));
+    %     figure(1);
+    %     plot(eta,transmission.^2,'r');
+    
+    %Plasma transmission
+    
+    if (hollow == 1) %hollow plasma
         
-        %% Fresnel in plasma
+        d0=r0^2-eta.^2;
+        d1=eta.^2-(r0-r1)^2;
         
-        %Gaussian beam
-        sigma = 4E-2/16;
-        transmission = exp(-(eta.^2)/(2*sigma^2));
-        
-        %Plasma transmission
-        
-        if (hollow == 1) %hollow plasma
-            
-            d0=r0^2-eta.^2;
-            d1=eta.^2-(r0-r1)^2;
-            
-            transmission = transmission.*exp(-2*1i*pi/lambda*2/sin(alpha)*nLi*r0);
-            transmission(d0>=0) = transmission(d0>=0).*exp(-2*1i*pi/lambda*2/sin(alpha)*sqrt(d0(d0>=0))*(nPlasma-nLi));
-            transmission(d1<0) = transmission(d1<0).*exp(-2*1i*pi/lambda*2/sin(alpha)*sqrt(-d1(d1<0))*(nLi-nPlasma));
-            
-            
-        else %cylindrical plasma
-            
-            Lp = 2*r0/sin(alpha);
-            d0=r0^2-eta.^2;
-            
-            transmission = transmission * (exp(-2*1i*pi/lambda*nLi*Lp));
-            transmission(d0>=0) = transmission(d0>=0) .* exp(-2*1i*pi/lambda*2/abs(sin(alpha))*(nPlasma-nLi).*sqrt(d0(d0>=0)));
-            
-        end
-        
-        %Fresnel
-        U = fresnel1D(lambda,transmission,z,L_bp,a);
-       
-        
-        %% Fresnel from plasma to lens
-        
-        propag = 2*f; %-z;
-        L_ap = 2*pi*lambda*a/L_bp * z;
-        U = fresnel1D(lambda,U,propag,L_ap,a);
-
-        %% Lens term
-        
-        L_lens = 2*pi*lambda*a/L_ap * propag;
-        new_grid = (linspace(-L_lens/2,L_lens/2,a))';
-        %U(abs(new_grid)>p) = 0; %lens clipping
-        U = U.*exp(-1i*pi/(lambda*f)*new_grid.^2); %lens phase shift
-        
-        %% Fresnel from lens to camera
-        
-        U = fresnel1D(lambda,U,2*f,L_lens,a);
-     
-        U=abs(U).^2;
-
-        % Interpolation
-        L_cam = 2*pi*lambda*a*2*f/L_lens;
-        window=(linspace(L_cam/2,-L_cam/2,a))';
-        interp_grid=(linspace(0.04,-0.04,b))'; %the new grid within we do the interpolation
-        U_linear = interp1(window,U,interp_grid,'linear');
-        
-        % Waterfall
-        W_linear(:,k+1)=U_linear;
+        transmission = transmission.*exp(-2*1i*pi/lambda*2/sin(alpha)*nLi*r0);
+        transmission(d0>=0) = transmission(d0>=0).*exp(-2*1i*pi/lambda*2/sin(alpha)*sqrt(d0(d0>=0))*(nPlasma-nLi));
+        transmission(d1<0) = transmission(d1<0).*exp(-2*1i*pi/lambda*2/sin(alpha)*sqrt(-d1(d1<0))*(nLi-nPlasma));
         
         
-    end %if
+    else %cylindrical plasma
+        
+        Lp = 2*r0/sin(alpha);
+        d0=r0^2-eta.^2;
+        
+        transmission = transmission * (exp(-2*1i*pi/lambda*nLi*Lp));
+        transmission(d0>=0) = transmission(d0>=0) .* exp(-2*1i*pi/lambda*2/abs(sin(alpha))*(nPlasma-nLi).*sqrt(d0(d0>=0)));
+        
+    end
+    
+    %Fresnel
+    propag = 2*f-z;
+    [U,new_grid] = fresnel1D(lambda,transmission,propag,eta);
+    
+    %% Lens term
+    
+    %lens clipping
+    U(abs(new_grid)>p) = 0;
+    %lens phase shift
+    U = U.*exp(-1i*pi/(lambda*f)*new_grid.^2);
+    
+    %         hold on;
+    %         %plot(new_grid,atan(Im(U)/r);
+    %         plot(new_grid,abs(U).^2);
+    %         xlim([-0.01 0.01]);
+    %         pause(0.2);
+    %         hold off;
+    
+    %% Fresnel propagation from lens to camera
+    
+    [U,grid_cam] = fresnel1D(lambda,U,2*f,new_grid);
+    U=abs(U).^2;
+    
+    % Interpolation
+    interp_grid=(linspace(-0.005,0.005,b))'; %the new grid within we do the interpolation
+    U_linear = interp1(grid_cam,U,interp_grid,'linear');
+    
+    % Waterfall
+    W_linear(:,k+1)=U_linear;
+    
 end %for k
 
 
 %% Plotting waterfall
 
-figure;
+figure(2);
 
 pcolor(linspace(-zmax,zmax,nbz+1),interp_grid,W_linear); shading interp;
-colorbar; %caxis([0.1E10 9E10]);
+axis xy;
+colorbar; caxis([0.1 2]);
 colormap jet;
 
